@@ -39,4 +39,4 @@ From the Results,
 
 
 # Enhanced Implementation
-- Enhanced implementation code is inside of the enhanced implementation folder
+- Enhanced implementation code is inside of the enhanced implementation folder as 'research_v2'
