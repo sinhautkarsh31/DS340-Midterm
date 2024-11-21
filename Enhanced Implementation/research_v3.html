@@ -3,7 +3,7 @@
 <html lang="en">
 <head><meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>research_v2</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>research_v3</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <style type="text/css">
     pre { line-height: 125%; }
 td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
@@ -7525,12 +7525,37 @@ a.anchor-link {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [74]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [13]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">sklearn.feature_extraction.text</span> <span class="kn">import</span> <span class="n">TfidfVectorizer</span>
+<span class="kn">from</span> <span class="nn">sklearn.metrics.pairwise</span> <span class="kn">import</span> <span class="n">cosine_similarity</span>
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">train_test_split</span>
 
-<span class="c1"># Load datasets</span>
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">KFold</span>
+<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">mean_squared_error</span> <span class="k">as</span> <span class="n">root_mean_squared_error</span> 
+<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">mean_absolute_error</span>
+<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">precision_score</span><span class="p">,</span> <span class="n">recall_score</span><span class="p">,</span> <span class="n">f1_score</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">scipy.sparse</span> <span class="kn">import</span> <span class="n">csr_matrix</span>
+
+<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">precision_recall_fscore_support</span><span class="p">,</span> <span class="n">precision_score</span><span class="p">,</span> <span class="n">recall_score</span><span class="p">,</span> <span class="n">f1_score</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [14]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Load datasets</span>
 <span class="n">movies</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="sa">r</span><span class="s1">'C:\Users\pedro\Desktop\Github\DS340-Midterm\Small MovieLens\movies.csv'</span><span class="p">)</span>
 <span class="n">ratings</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="sa">r</span><span class="s1">'C:\Users\pedro\Desktop\Github\DS340-Midterm\Small MovieLens\ratings.csv'</span><span class="p">)</span>
 <span class="n">tags</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="sa">r</span><span class="s1">'C:\Users\pedro\Desktop\Github\DS340-Midterm\Small MovieLens\tags.csv'</span><span class="p">)</span>
@@ -7560,13 +7585,10 @@ a.anchor-link {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [75]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [15]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">re</span>
-
-<span class="c1"># Function to extract year from title</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Function to extract year from title</span>
 <span class="k">def</span> <span class="nf">extract_year</span><span class="p">(</span><span class="n">title</span><span class="p">):</span>
     <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">'\((\d</span><span class="si">{4}</span><span class="s1">)\)'</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
@@ -7601,52 +7623,89 @@ a.anchor-link {
 </div>
 </div>
 </div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Split-Data-into-Training,-Testing,-and-Validation-Sets">Split Data into Training, Testing, and Validation Sets<a class="anchor-link" href="#Split-Data-into-Training,-Testing,-and-Validation-Sets">¶</a></h2><p>We'll create training, testing, and validation sets for both CF and CBF models.</p>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="For-Ratings-Data-(CF-Model)">For Ratings Data (CF Model)<a class="anchor-link" href="#For-Ratings-Data-(CF-Model)">¶</a></h3>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [76]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [16]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">train_test_split</span>
-
-<span class="c1"># Split 10% of the data for validation</span>
-<span class="n">cf_remaining</span><span class="p">,</span> <span class="n">cf_validation</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span>
-    <span class="n">ratings</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">stratify</span><span class="o">=</span><span class="n">ratings</span><span class="p">[</span><span class="s1">'userId'</span><span class="p">]</span>
-<span class="p">)</span>
-
-<span class="c1"># Split remaining data into training and testing sets (80% train, 20% test)</span>
-<span class="n">cf_train</span><span class="p">,</span> <span class="n">cf_test</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span>
-    <span class="n">cf_remaining</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">stratify</span><span class="o">=</span><span class="n">cf_remaining</span><span class="p">[</span><span class="s1">'userId'</span><span class="p">]</span>
-<span class="p">)</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">movies</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="n">ratings</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
 </div>
 </div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[16]:</div>
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>userId</th>
+<th>movieId</th>
+<th>rating</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>0</th>
+<td>1</td>
+<td>1</td>
+<td>4.0</td>
+</tr>
+<tr>
+<th>1</th>
+<td>1</td>
+<td>3</td>
+<td>4.0</td>
+</tr>
+<tr>
+<th>2</th>
+<td>1</td>
+<td>6</td>
+<td>4.0</td>
+</tr>
+<tr>
+<th>3</th>
+<td>1</td>
+<td>47</td>
+<td>5.0</td>
+</tr>
+<tr>
+<th>4</th>
+<td>1</td>
+<td>50</td>
+<td>5.0</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
 </div>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
 <div class="jp-Cell-inputWrapper" tabindex="0">
@@ -7654,18 +7713,7 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="For-Movies-Data-(CBF-Model)">For Movies Data (CBF Model)<a class="anchor-link" href="#For-Movies-Data-(CBF-Model)">¶</a></h3><p>Since CBF relies on item features, we'll split the movies.</p>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="2.-Content-Based-Filtering-(CBF-Model)">2. Content-Based Filtering (CBF Model)<a class="anchor-link" href="#2.-Content-Based-Filtering-(CBF-Model)">¶</a></h1><h2 id="Step-1:-Vectorize-Item-Content">Step 1: Vectorize Item Content<a class="anchor-link" href="#Step-1:-Vectorize-Item-Content">¶</a></h2><p>Use TF-IDF to vectorize the 'related' column in cbf_train.</p>
+<h1 id="2.-Content-Based">2. Content Based<a class="anchor-link" href="#2.-Content-Based">¶</a></h1>
 </div>
 </div>
 </div>
@@ -7674,15 +7722,25 @@ a.anchor-link {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [77]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [17]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">sklearn.feature_extraction.text</span> <span class="kn">import</span> <span class="n">TfidfVectorizer</span>
-
-<span class="c1"># Initialize TF-IDF Vectorizer with English stop words</span>
-<span class="n">tfidf</span> <span class="o">=</span> <span class="n">TfidfVectorizer</span><span class="p">(</span><span class="n">stop_words</span><span class="o">=</span><span class="s1">'english'</span><span class="p">)</span>
-
-<span class="c1"># Fit and transform the 'related' column</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">remaining</span><span class="p">,</span> <span class="n">validation</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">ratings</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">stratify</span><span class="o">=</span><span class="n">ratings</span><span class="p">[</span><span class="s1">'userId'</span><span class="p">])</span>
+<span class="n">training</span><span class="p">,</span> <span class="n">testing</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">remaining</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [18]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">tfidf</span> <span class="o">=</span> <span class="n">TfidfVectorizer</span><span class="p">(</span><span class="n">stop_words</span><span class="o">=</span><span class="s1">'english'</span><span class="p">)</span>
 <span class="n">tfidf_matrix</span> <span class="o">=</span> <span class="n">tfidf</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">movies</span><span class="p">[</span><span class="s1">'related'</span><span class="p">])</span>
 </pre></div>
 </div>
@@ -7694,130 +7752,94 @@ a.anchor-link {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [78]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [19]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Split 10% of the movies for validation</span>
-<span class="n">cbf_remaining</span><span class="p">,</span> <span class="n">cbf_validation</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span>
-    <span class="n">movies</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span>
-<span class="p">)</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">cosine_sim</span> <span class="o">=</span> <span class="n">cosine_similarity</span><span class="p">(</span><span class="n">tfidf_matrix</span><span class="p">,</span> <span class="n">tfidf_matrix</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [20]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">kf</span> <span class="o">=</span> <span class="n">KFold</span><span class="p">(</span><span class="n">n_splits</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [21]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">for</span> <span class="n">train_index</span><span class="p">,</span> <span class="n">val_index</span> <span class="ow">in</span> <span class="n">kf</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">training</span><span class="p">):</span>
+    <span class="n">cv_train_data</span> <span class="o">=</span> <span class="n">training</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">train_index</span><span class="p">]</span>
+    <span class="n">cv_val_data</span> <span class="o">=</span> <span class="n">training</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">val_index</span><span class="p">]</span>
+    <span class="c1"># Train and evaluate your model here</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [22]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">get_similar_movies</span><span class="p">(</span><span class="n">movie_id</span><span class="p">,</span> <span class="n">top_n</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">movies</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">movies</span><span class="p">[</span><span class="s1">'movieId'</span><span class="p">]</span> <span class="o">==</span> <span class="n">movie_id</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">sim_scores</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">cosine_sim</span><span class="p">[</span><span class="n">idx</span><span class="p">]))</span>
+    <span class="n">sim_scores</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">sim_scores</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">sim_scores</span> <span class="o">=</span> <span class="n">sim_scores</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">top_n</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">movie_indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">sim_scores</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">movies</span><span class="p">[</span><span class="s1">'movieId'</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">movie_indices</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [23]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">user_recommendations</span> <span class="o">=</span> <span class="p">{}</span>
 
-<span class="c1"># Split remaining data into training and testing sets (80% train, 20% test)</span>
-<span class="n">cbf_train</span><span class="p">,</span> <span class="n">cbf_test</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span>
-    <span class="n">cbf_remaining</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-2:-Build-User-Profiles">Step 2: Build User Profiles<a class="anchor-link" href="#Step-2:-Build-User-Profiles">¶</a></h2><p>Create user profiles by aggregating the content of the movies they've rated.</p>
-<h3 id="a.-Merge-Ratings-with-Movie-Content">a. Merge Ratings with Movie Content<a class="anchor-link" href="#a.-Merge-Ratings-with-Movie-Content">¶</a></h3>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [79]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Merge cf_train with cbf_train to get 'related' content</span>
-<span class="n">user_ratings</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">cf_train</span><span class="p">,</span> <span class="n">cbf_train</span><span class="p">[[</span><span class="s1">'movieId'</span><span class="p">,</span> <span class="s1">'related'</span><span class="p">]],</span> <span class="n">on</span><span class="o">=</span><span class="s1">'movieId'</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">'inner'</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="b.-Transform-'related'-Conten">b. Transform 'related' Conten<a class="anchor-link" href="#b.-Transform-'related'-Conten">¶</a></h3>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [80]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Transform the 'related' column in user_ratings</span>
-<span class="n">user_ratings_tfidf</span> <span class="o">=</span> <span class="n">tfidf</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">user_ratings</span><span class="p">[</span><span class="s1">'related'</span><span class="p">])</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="c.-Build-User-Profiles">c. Build User Profiles<a class="anchor-link" href="#c.-Build-User-Profiles">¶</a></h3><p>Aggregate the TF-IDF vectors weighted by the user's ratings.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [81]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="k">for</span> <span class="n">user_id</span> <span class="ow">in</span> <span class="n">testing</span><span class="p">[</span><span class="s1">'userId'</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">():</span>
+    <span class="n">user_movies</span> <span class="o">=</span> <span class="n">training</span><span class="p">[</span><span class="n">training</span><span class="p">[</span><span class="s1">'userId'</span><span class="p">]</span> <span class="o">==</span> <span class="n">user_id</span><span class="p">][</span><span class="s1">'movieId'</span><span class="p">]</span>
+    <span class="n">rec_movies_list</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># Use a list to collect similar movies</span>
 
-<span class="c1"># Create a dictionary to store user profiles</span>
-<span class="n">user_profiles</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">movie_id</span> <span class="ow">in</span> <span class="n">user_movies</span><span class="p">:</span>
+        <span class="n">similar_movies</span> <span class="o">=</span> <span class="n">get_similar_movies</span><span class="p">(</span><span class="n">movie_id</span><span class="p">)</span>
+        <span class="n">rec_movies_list</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">similar_movies</span><span class="p">)</span>  <span class="c1"># Append similar movies to the list</span>
 
-<span class="c1"># Get unique user IDs</span>
-<span class="n">user_ids</span> <span class="o">=</span> <span class="n">user_ratings</span><span class="p">[</span><span class="s1">'userId'</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+    <span class="c1"># Convert the list to a pandas Series</span>
+    <span class="n">rec_movies</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">rec_movies_list</span><span class="p">)</span>
 
-<span class="k">for</span> <span class="n">user_id</span> <span class="ow">in</span> <span class="n">user_ids</span><span class="p">:</span>
-    <span class="c1"># Get indices of movies rated by the user</span>
-    <span class="n">indices</span> <span class="o">=</span> <span class="n">user_ratings</span><span class="p">[</span><span class="n">user_ratings</span><span class="p">[</span><span class="s1">'userId'</span><span class="p">]</span> <span class="o">==</span> <span class="n">user_id</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>
-    
-    <span class="c1"># Get the TF-IDF vectors and ratings</span>
-    <span class="n">tfidf_vectors</span> <span class="o">=</span> <span class="n">user_ratings_tfidf</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span>
-    <span class="n">ratings_values</span> <span class="o">=</span> <span class="n">user_ratings</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">indices</span><span class="p">,</span> <span class="s1">'rating'</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-    
-    <span class="c1"># Compute the weighted average</span>
-    <span class="n">weighted_tfidf</span> <span class="o">=</span> <span class="n">tfidf_vectors</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">ratings_values</span><span class="p">)</span>
-    <span class="n">user_profile</span> <span class="o">=</span> <span class="n">weighted_tfidf</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">ratings_values</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-    
-    <span class="n">user_profiles</span><span class="p">[</span><span class="n">user_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">user_profile</span>
+    <span class="c1"># Remove movies the user has already rated</span>
+    <span class="n">rec_movies</span> <span class="o">=</span> <span class="n">rec_movies</span><span class="p">[</span><span class="o">~</span><span class="n">rec_movies</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">user_movies</span><span class="p">)]</span>
+
+    <span class="c1"># Count occurrences of recommendations and get the top 10</span>
+    <span class="n">user_recommendations</span><span class="p">[</span><span class="n">user_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">rec_movies</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">index</span><span class="p">[:</span><span class="mi">10</span><span class="p">]</span>
 </pre></div>
 </div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-3:-Predict-Ratings">Step 3: Predict Ratings<a class="anchor-link" href="#Step-3:-Predict-Ratings">¶</a></h2><p>Predict ratings for user-item pairs in cf_test.</p>
-<h3 id="a.-Prepare-Test-Data">a. Prepare Test Data<a class="anchor-link" href="#a.-Prepare-Test-Data">¶</a></h3>
 </div>
 </div>
 </div>
@@ -7826,127 +7848,39 @@ a.anchor-link {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [82]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [24]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Merge cf_test with cbf_test to get 'related' content</span>
-<span class="n">test_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">cf_test</span><span class="p">,</span> <span class="n">cbf_test</span><span class="p">[[</span><span class="s1">'movieId'</span><span class="p">,</span> <span class="s1">'related'</span><span class="p">]],</span> <span class="n">on</span><span class="o">=</span><span class="s1">'movieId'</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">'inner'</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="b.-Transform-'related'-Content-in-Test-Data">b. Transform 'related' Content in Test Data<a class="anchor-link" href="#b.-Transform-'related'-Content-in-Test-Data">¶</a></h3>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [83]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Transform the 'related' column in test_data</span>
-<span class="n">test_tfidf</span> <span class="o">=</span> <span class="n">tfidf</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">test_data</span><span class="p">[</span><span class="s1">'related'</span><span class="p">])</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="c.-Predict-Ratings">c. Predict Ratings<a class="anchor-link" href="#c.-Predict-Ratings">¶</a></h3><p>Compute the dot product between user profiles and item vectors.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [84]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">predicted_ratings</span> <span class="o">=</span> <span class="p">[]</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Define a rating threshold to consider a movie as "liked"</span>
+<span class="n">rating_threshold</span> <span class="o">=</span> <span class="mf">4.0</span>
 
-<span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">test_data</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
-    <span class="n">user_id</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">'userId'</span><span class="p">]</span>
-    <span class="n">movie_tfidf</span> <span class="o">=</span> <span class="n">test_tfidf</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>  <span class="c1"># This is a sparse matrix</span>
-    <span class="n">user_profile</span> <span class="o">=</span> <span class="n">user_profiles</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span>  <span class="c1"># This is also a sparse matrix</span>
-    
-    <span class="k">if</span> <span class="n">user_profile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="c1"># Convert both user_profile and movie_tfidf to dense arrays</span>
-        <span class="n">user_profile_dense</span> <span class="o">=</span> <span class="n">user_profile</span><span class="o">.</span><span class="n">A</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>  <span class="c1"># Convert to 1D array</span>
-        <span class="n">movie_tfidf_dense</span> <span class="o">=</span> <span class="n">movie_tfidf</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>  <span class="c1"># Convert to 1D array</span>
-        
-        <span class="c1"># Compute dot product and append as float</span>
-        <span class="n">pred_rating</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">user_profile_dense</span><span class="p">,</span> <span class="n">movie_tfidf_dense</span><span class="p">)</span>  <span class="c1"># Dot product</span>
-        <span class="n">predicted_ratings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">pred_rating</span><span class="p">))</span>
+<span class="c1"># Create binary relevance for test data</span>
+<span class="n">testing</span><span class="p">[</span><span class="s1">'relevant'</span><span class="p">]</span> <span class="o">=</span> <span class="n">testing</span><span class="p">[</span><span class="s1">'rating'</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">rating_threshold</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [25]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Example of estimating ratings</span>
+<span class="k">def</span> <span class="nf">estimate_rating</span><span class="p">(</span><span class="n">user_id</span><span class="p">,</span> <span class="n">movie_id</span><span class="p">):</span>
+    <span class="n">similar_movies</span> <span class="o">=</span> <span class="n">get_similar_movies</span><span class="p">(</span><span class="n">movie_id</span><span class="p">)</span>
+    <span class="n">similar_ratings</span> <span class="o">=</span> <span class="n">training</span><span class="p">[(</span><span class="n">training</span><span class="p">[</span><span class="s1">'userId'</span><span class="p">]</span> <span class="o">==</span> <span class="n">user_id</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">training</span><span class="p">[</span><span class="s1">'movieId'</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">similar_movies</span><span class="p">))][</span><span class="s1">'rating'</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">similar_ratings</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">similar_ratings</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="c1"># Assign NaN if user profile is not available</span>
-        <span class="n">predicted_ratings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">training</span><span class="p">[</span><span class="n">training</span><span class="p">[</span><span class="s1">'userId'</span><span class="p">]</span> <span class="o">==</span> <span class="n">user_id</span><span class="p">][</span><span class="s1">'rating'</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
 
-<span class="n">test_data</span><span class="p">[</span><span class="s1">'predicted_rating'</span><span class="p">]</span> <span class="o">=</span> <span class="n">predicted_ratings</span>
+<span class="n">testing</span><span class="p">[</span><span class="s1">'predicted_rating'</span><span class="p">]</span> <span class="o">=</span> <span class="n">testing</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">estimate_rating</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s1">'userId'</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="s1">'movieId'</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-4:-Scale-Predicted-Ratings">Step 4: Scale Predicted Ratings<a class="anchor-link" href="#Step-4:-Scale-Predicted-Ratings">¶</a></h2><p>Scale the predicted ratings to match the actual rating scale (0.5 to 5)</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [85]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="kn">import</span> <span class="n">MinMaxScaler</span>
-
-<span class="c1"># Remove NaN values</span>
-<span class="n">valid_predictions</span> <span class="o">=</span> <span class="n">test_data</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s1">'predicted_rating'</span><span class="p">])</span>
-
-<span class="c1"># Scale predicted ratings</span>
-<span class="n">scaler</span> <span class="o">=</span> <span class="n">MinMaxScaler</span><span class="p">(</span><span class="n">feature_range</span><span class="o">=</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
-<span class="n">scaled_ratings</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">valid_predictions</span><span class="p">[</span><span class="s1">'predicted_rating'</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-<span class="n">valid_predictions</span><span class="p">[</span><span class="s1">'predicted_rating'</span><span class="p">]</span> <span class="o">=</span> <span class="n">scaled_ratings</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-5:-Evaluate-the-CBF-Model">Step 5: Evaluate the CBF Model<a class="anchor-link" href="#Step-5:-Evaluate-the-CBF-Model">¶</a></h2><p>Compute RMSE and MAE</p>
 </div>
 </div>
 </div>
@@ -7955,16 +7889,12 @@ a.anchor-link {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [86]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [26]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">mean_squared_error</span><span class="p">,</span> <span class="n">mean_absolute_error</span>
-
-<span class="n">rmse_cbf</span> <span class="o">=</span> <span class="n">mean_squared_error</span><span class="p">(</span><span class="n">valid_predictions</span><span class="p">[</span><span class="s1">'rating'</span><span class="p">],</span> <span class="n">valid_predictions</span><span class="p">[</span><span class="s1">'predicted_rating'</span><span class="p">],</span> <span class="n">squared</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">mae_cbf</span> <span class="o">=</span> <span class="n">mean_absolute_error</span><span class="p">(</span><span class="n">valid_predictions</span><span class="p">[</span><span class="s1">'rating'</span><span class="p">],</span> <span class="n">valid_predictions</span><span class="p">[</span><span class="s1">'predicted_rating'</span><span class="p">])</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"CBF Model RMSE: </span><span class="si">{</span><span class="n">rmse_cbf</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"CBF Model MAE: </span><span class="si">{</span><span class="n">mae_cbf</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">rmse</span> <span class="o">=</span> <span class="n">root_mean_squared_error</span><span class="p">(</span><span class="n">testing</span><span class="p">[</span><span class="s1">'rating'</span><span class="p">],</span> <span class="n">testing</span><span class="p">[</span><span class="s1">'predicted_rating'</span><span class="p">])</span>
+<span class="n">mae</span> <span class="o">=</span> <span class="n">mean_absolute_error</span><span class="p">(</span><span class="n">testing</span><span class="p">[</span><span class="s1">'rating'</span><span class="p">],</span> <span class="n">testing</span><span class="p">[</span><span class="s1">'predicted_rating'</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">rmse</span><span class="p">,</span> <span class="n">mae</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7977,30 +7907,126 @@ a.anchor-link {
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>CBF Model RMSE: 3.0531
-CBF Model MAE: 2.8759
+<pre>1.0027050237743078 0.7508850234582828
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [27]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Generate binary predictions based on whether the movie was recommended</span>
+<span class="n">testing</span><span class="p">[</span><span class="s1">'predicted_relevant'</span><span class="p">]</span> <span class="o">=</span> <span class="n">testing</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+    <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s1">'movieId'</span><span class="p">]</span> <span class="ow">in</span> <span class="n">user_recommendations</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s1">'userId'</span><span class="p">],</span> <span class="p">[]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [28]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">precision</span> <span class="o">=</span> <span class="n">precision_score</span><span class="p">(</span><span class="n">testing</span><span class="p">[</span><span class="s1">'relevant'</span><span class="p">],</span> <span class="n">testing</span><span class="p">[</span><span class="s1">'predicted_relevant'</span><span class="p">])</span>
+<span class="n">recall</span> <span class="o">=</span> <span class="n">recall_score</span><span class="p">(</span><span class="n">testing</span><span class="p">[</span><span class="s1">'relevant'</span><span class="p">],</span> <span class="n">testing</span><span class="p">[</span><span class="s1">'predicted_relevant'</span><span class="p">])</span>
+<span class="n">f1</span> <span class="o">=</span> <span class="n">f1_score</span><span class="p">(</span><span class="n">testing</span><span class="p">[</span><span class="s1">'relevant'</span><span class="p">],</span> <span class="n">testing</span><span class="p">[</span><span class="s1">'predicted_relevant'</span><span class="p">])</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">precision</span><span class="p">,</span> <span class="n">recall</span><span class="p">,</span> <span class="n">f1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>0.6867469879518072 0.006502395619438741 0.01288281161713188
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [29]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Define a function to calculate metrics for each user</span>
+<span class="k">def</span> <span class="nf">calculate_user_metrics</span><span class="p">(</span><span class="n">group</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">precision</span> <span class="o">=</span> <span class="n">precision_score</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s1">'relevant'</span><span class="p">],</span> <span class="n">group</span><span class="p">[</span><span class="s1">'predicted_relevant'</span><span class="p">],</span> <span class="n">zero_division</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">recall</span> <span class="o">=</span> <span class="n">recall_score</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s1">'relevant'</span><span class="p">],</span> <span class="n">group</span><span class="p">[</span><span class="s1">'predicted_relevant'</span><span class="p">],</span> <span class="n">zero_division</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">f1</span> <span class="o">=</span> <span class="n">f1_score</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s1">'relevant'</span><span class="p">],</span> <span class="n">group</span><span class="p">[</span><span class="s1">'predicted_relevant'</span><span class="p">],</span> <span class="n">zero_division</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>  <span class="c1"># Handle cases where there are no positive samples</span>
+        <span class="n">precision</span><span class="p">,</span> <span class="n">recall</span><span class="p">,</span> <span class="n">f1</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span>
+    
+    <span class="n">rmse</span> <span class="o">=</span> <span class="n">root_mean_squared_error</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s1">'rating'</span><span class="p">],</span> <span class="n">group</span><span class="p">[</span><span class="s1">'predicted_rating'</span><span class="p">])</span>
+    <span class="n">mae</span> <span class="o">=</span> <span class="n">mean_absolute_error</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s1">'rating'</span><span class="p">],</span> <span class="n">group</span><span class="p">[</span><span class="s1">'predicted_rating'</span><span class="p">])</span>
+    
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">({</span><span class="s1">'precision'</span><span class="p">:</span> <span class="n">precision</span><span class="p">,</span> <span class="s1">'recall'</span><span class="p">:</span> <span class="n">recall</span><span class="p">,</span> <span class="s1">'f1'</span><span class="p">:</span> <span class="n">f1</span><span class="p">,</span> <span class="s1">'rmse'</span><span class="p">:</span> <span class="n">rmse</span><span class="p">,</span> <span class="s1">'mae'</span><span class="p">:</span> <span class="n">mae</span><span class="p">})</span>
+
+<span class="c1"># Group by userId and compute metrics, excluding the grouping column explicitly</span>
+<span class="n">user_metrics</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">testing</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">'userId'</span><span class="p">,</span> <span class="n">group_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># Ensures only grouped rows are passed</span>
+    <span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">calculate_user_metrics</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="c1"># Compute average metrics</span>
+<span class="n">avg_precision</span> <span class="o">=</span> <span class="n">user_metrics</span><span class="p">[</span><span class="s1">'precision'</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+<span class="n">avg_recall</span> <span class="o">=</span> <span class="n">user_metrics</span><span class="p">[</span><span class="s1">'recall'</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+<span class="n">avg_f1</span> <span class="o">=</span> <span class="n">user_metrics</span><span class="p">[</span><span class="s1">'f1'</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+<span class="n">avg_rmse</span> <span class="o">=</span> <span class="n">user_metrics</span><span class="p">[</span><span class="s1">'rmse'</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+<span class="n">avg_mae</span> <span class="o">=</span> <span class="n">user_metrics</span><span class="p">[</span><span class="s1">'mae'</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Average Precision: </span><span class="si">{</span><span class="n">avg_precision</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Average Recall: </span><span class="si">{</span><span class="n">avg_recall</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Average F1 Score: </span><span class="si">{</span><span class="n">avg_f1</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Average RMSE: </span><span class="si">{</span><span class="n">avg_rmse</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Average MAE: </span><span class="si">{</span><span class="n">avg_mae</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Average Precision: 0.0743
+Average Recall: 0.0141
+Average F1 Score: 0.0212
+Average RMSE: 0.9865
+Average MAE: 0.7400
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>c:\Users\pedro\Desktop\Github\DS_340-Movies\.venv\Lib\site-packages\sklearn\metrics\_regression.py:492: FutureWarning: 'squared' is deprecated in version 1.4 and will be removed in 1.6. To calculate the root mean squared error, use the function'root_mean_squared_error'.
-  warnings.warn(
+<pre>C:\Users\pedro\AppData\Local\Temp\ipykernel_17032\1717839758.py:18: DeprecationWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+  .apply(calculate_user_metrics)
 </pre>
 </div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Compute Precision, Recall, and F1-score
-Define relevant items as those with ratings ≥ 4.</p>
 </div>
 </div>
 </div>
@@ -8009,23 +8035,23 @@ Define relevant items as those with ratings ≥ 4.</p>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [87]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [30]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">precision_score</span><span class="p">,</span> <span class="n">recall_score</span><span class="p">,</span> <span class="n">f1_score</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># After each fold, store the metrics</span>
+<span class="n">precision_scores</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">recall_scores</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">f1_scores</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">rmse_scores</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">mae_scores</span> <span class="o">=</span> <span class="p">[]</span>
 
-<span class="c1"># Define relevance</span>
-<span class="n">valid_predictions</span><span class="p">[</span><span class="s1">'actual_relevant'</span><span class="p">]</span> <span class="o">=</span> <span class="n">valid_predictions</span><span class="p">[</span><span class="s1">'rating'</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mf">4.0</span>
-<span class="n">valid_predictions</span><span class="p">[</span><span class="s1">'predicted_relevant'</span><span class="p">]</span> <span class="o">=</span> <span class="n">valid_predictions</span><span class="p">[</span><span class="s1">'predicted_rating'</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mf">4.0</span>
+<span class="c1"># Append metrics in each fold</span>
+<span class="n">precision_scores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span>
+<span class="c1"># Similarly for other metrics...</span>
 
-<span class="c1"># Compute metrics</span>
-<span class="n">precision_cbf</span> <span class="o">=</span> <span class="n">precision_score</span><span class="p">(</span><span class="n">valid_predictions</span><span class="p">[</span><span class="s1">'actual_relevant'</span><span class="p">],</span> <span class="n">valid_predictions</span><span class="p">[</span><span class="s1">'predicted_relevant'</span><span class="p">])</span>
-<span class="n">recall_cbf</span> <span class="o">=</span> <span class="n">recall_score</span><span class="p">(</span><span class="n">valid_predictions</span><span class="p">[</span><span class="s1">'actual_relevant'</span><span class="p">],</span> <span class="n">valid_predictions</span><span class="p">[</span><span class="s1">'predicted_relevant'</span><span class="p">])</span>
-<span class="n">f1_cbf</span> <span class="o">=</span> <span class="n">f1_score</span><span class="p">(</span><span class="n">valid_predictions</span><span class="p">[</span><span class="s1">'actual_relevant'</span><span class="p">],</span> <span class="n">valid_predictions</span><span class="p">[</span><span class="s1">'predicted_relevant'</span><span class="p">])</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"CBF Model Precision: </span><span class="si">{</span><span class="n">precision_cbf</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"CBF Model Recall: </span><span class="si">{</span><span class="n">recall_cbf</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"CBF Model F1-Score: </span><span class="si">{</span><span class="n">f1_cbf</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="c1"># After cross-validation</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Precision: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">precision_scores</span><span class="p">)</span><span class="si">}</span><span class="s1"> ± </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">precision_scores</span><span class="p">)</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+<span class="c1"># Similarly for other metrics...</span>
 </pre></div>
 </div>
 </div>
@@ -8038,23 +8064,89 @@ Define relevant items as those with ratings ≥ 4.</p>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>CBF Model Precision: 0.6667
-CBF Model Recall: 0.0013
-CBF Model F1-Score: 0.0026
+<pre>Precision: 0.6867469879518072 ± 0.0
 </pre>
 </div>
 </div>
 </div>
 </div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="3.-Collaborative-Filtering-(CF)-Model">3. Collaborative Filtering (CF) Model<a class="anchor-link" href="#3.-Collaborative-Filtering-(CF)-Model">¶</a></h1><p>We'll use the Surprise library to implement a CF model using SVD.</p>
-<h2 id="Step-1:-Prepare-Data">Step 1: Prepare Data<a class="anchor-link" href="#Step-1:-Prepare-Data">¶</a></h2><p>Convert cf_train and cf_test into Surprise data structures.</p>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [31]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># After each fold, store the metrics</span>
+<span class="n">precision_scores</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">recall_scores</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">f1_scores</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">rmse_scores</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">mae_scores</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c1"># Append metrics in each fold</span>
+<span class="n">precision_scores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span>
+<span class="c1"># Similarly for other metrics...</span>
+
+<span class="c1"># After cross-validation</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Precision: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">precision_scores</span><span class="p">)</span><span class="si">}</span><span class="s1"> ± </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">precision_scores</span><span class="p">)</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+<span class="c1"># Similarly for other metrics...</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Precision: 0.6867469879518072 ± 0.0
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [32]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># After each fold, store the metrics</span>
+<span class="n">precision_scores</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">recall_scores</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">f1_scores</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">rmse_scores</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">mae_scores</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c1"># Append metrics in each fold</span>
+<span class="n">precision_scores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span>
+<span class="c1"># Similarly for other metrics...</span>
+
+<span class="c1"># After cross-validation</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Precision: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">precision_scores</span><span class="p">)</span><span class="si">}</span><span class="s1"> ± </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">precision_scores</span><span class="p">)</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+<span class="c1"># Similarly for other metrics...</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Precision: 0.6867469879518072 ± 0.0
+</pre>
+</div>
 </div>
 </div>
 </div>
@@ -8063,24 +8155,18 @@ CBF Model F1-Score: 0.0026
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [88]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [33]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">surprise</span> <span class="kn">import</span> <span class="n">Dataset</span><span class="p">,</span> <span class="n">Reader</span><span class="p">,</span> <span class="n">SVD</span>
-<span class="kn">from</span> <span class="nn">surprise.model_selection</span> <span class="kn">import</span> <span class="n">train_test_split</span> <span class="k">as</span> <span class="n">surprise_train_test_split</span>
-
-<span class="c1"># Prepare data for Surprise</span>
-<span class="n">reader</span> <span class="o">=</span> <span class="n">Reader</span><span class="p">(</span><span class="n">rating_scale</span><span class="o">=</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">))</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">Dataset</span><span class="o">.</span><span class="n">load_from_df</span><span class="p">(</span><span class="n">ratings</span><span class="p">[[</span><span class="s1">'userId'</span><span class="p">,</span> <span class="s1">'movieId'</span><span class="p">,</span> <span class="s1">'rating'</span><span class="p">]],</span> <span class="n">reader</span><span class="p">)</span>
-
-<span class="c1"># Create a validation set</span>
-<span class="n">train_data</span><span class="p">,</span> <span class="n">validation_data</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">ratings</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">stratify</span><span class="o">=</span><span class="n">ratings</span><span class="p">[</span><span class="s1">'userId'</span><span class="p">])</span>
-
-<span class="c1"># Load training data into Surprise format</span>
-<span class="n">trainset_full</span> <span class="o">=</span> <span class="n">Dataset</span><span class="o">.</span><span class="n">load_from_df</span><span class="p">(</span><span class="n">train_data</span><span class="p">[[</span><span class="s1">'userId'</span><span class="p">,</span> <span class="s1">'movieId'</span><span class="p">,</span> <span class="s1">'rating'</span><span class="p">]],</span> <span class="n">reader</span><span class="p">)</span>
-
-<span class="c1"># Perform Surprise train-test split on training data</span>
-<span class="n">trainset</span> <span class="o">=</span> <span class="n">trainset_full</span><span class="o">.</span><span class="n">build_full_trainset</span><span class="p">()</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Content-based model metrics</span>
+<span class="n">content_results</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s1">'Model'</span><span class="p">:</span> <span class="p">[</span><span class="s1">'Content-Based'</span><span class="p">],</span>
+    <span class="s1">'RMSE'</span><span class="p">:</span> <span class="p">[</span><span class="n">rmse</span><span class="p">],</span>
+    <span class="s1">'MAE'</span><span class="p">:</span> <span class="p">[</span><span class="n">mae</span><span class="p">],</span>
+    <span class="s1">'Precision'</span><span class="p">:</span> <span class="p">[</span><span class="n">precision</span><span class="p">],</span>
+    <span class="s1">'Recall'</span><span class="p">:</span> <span class="p">[</span><span class="n">recall</span><span class="p">],</span>
+    <span class="s1">'F1-Score'</span><span class="p">:</span> <span class="p">[</span><span class="n">f1</span><span class="p">]</span>
+<span class="p">})</span>
 </pre></div>
 </div>
 </div>
@@ -8093,7 +8179,80 @@ CBF Model F1-Score: 0.0026
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-2:-Train-CF-Model">Step 2: Train CF Model<a class="anchor-link" href="#Step-2:-Train-CF-Model">¶</a></h2>
+<h1 id="3.-Collaborative">3. Collaborative<a class="anchor-link" href="#3.-Collaborative">¶</a></h1>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [34]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">surprise</span> <span class="kn">import</span> <span class="n">Dataset</span><span class="p">,</span> <span class="n">Reader</span><span class="p">,</span> <span class="n">SVD</span>
+<span class="kn">from</span> <span class="nn">surprise.model_selection</span> <span class="kn">import</span> <span class="n">GridSearchCV</span><span class="p">,</span> <span class="n">cross_validate</span><span class="p">,</span> <span class="n">KFold</span>
+<span class="kn">from</span> <span class="nn">surprise.accuracy</span> <span class="kn">import</span> <span class="n">rmse</span><span class="p">,</span> <span class="n">mae</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [35]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">reader</span> <span class="o">=</span> <span class="n">Reader</span><span class="p">(</span><span class="n">rating_scale</span><span class="o">=</span><span class="p">(</span><span class="n">ratings</span><span class="p">[</span><span class="s1">'rating'</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">ratings</span><span class="p">[</span><span class="s1">'rating'</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()))</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [36]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Create Surprise datasets</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">Dataset</span><span class="o">.</span><span class="n">load_from_df</span><span class="p">(</span><span class="n">training</span><span class="p">[[</span><span class="s1">'userId'</span><span class="p">,</span> <span class="s1">'movieId'</span><span class="p">,</span> <span class="s1">'rating'</span><span class="p">]],</span> <span class="n">reader</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [37]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Define the parameter grid to search</span>
+<span class="n">param_grid</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">'n_factors'</span><span class="p">:</span> <span class="p">[</span><span class="mi">50</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">150</span><span class="p">],</span>
+    <span class="s1">'n_epochs'</span><span class="p">:</span> <span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">],</span>
+    <span class="s1">'lr_all'</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.005</span><span class="p">,</span> <span class="mf">0.010</span><span class="p">],</span>
+    <span class="s1">'reg_all'</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">]</span>
+<span class="p">}</span>
+
+<span class="c1"># Define the cross-validation iterator</span>
+<span class="n">kf</span> <span class="o">=</span> <span class="n">KFold</span><span class="p">(</span><span class="n">n_splits</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Perform grid search</span>
+<span class="n">gs</span> <span class="o">=</span> <span class="n">GridSearchCV</span><span class="p">(</span><span class="n">SVD</span><span class="p">,</span> <span class="n">param_grid</span><span class="p">,</span> <span class="n">measures</span><span class="o">=</span><span class="p">[</span><span class="s1">'rmse'</span><span class="p">,</span> <span class="s1">'mae'</span><span class="p">],</span> <span class="n">cv</span><span class="o">=</span><span class="n">kf</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">gs</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
 </div>
 </div>
 </div>
@@ -8102,14 +8261,51 @@ CBF Model F1-Score: 0.0026
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [89]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [38]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Initialize SVD algorithm</span>
-<span class="n">algo</span> <span class="o">=</span> <span class="n">SVD</span><span class="p">()</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Best RMSE score</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Best RMSE score: </span><span class="si">{</span><span class="n">gs</span><span class="o">.</span><span class="n">best_score</span><span class="p">[</span><span class="s1">'rmse'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
-<span class="c1"># Train the algorithm on the trainset</span>
-<span class="n">algo</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">trainset</span><span class="p">)</span>
+<span class="c1"># Best hyperparameters</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Best hyperparameters:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">best_params</span><span class="p">[</span><span class="s1">'rmse'</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Best RMSE score: 0.8746784691583634
+Best hyperparameters:
+{'n_factors': 150, 'n_epochs': 30, 'lr_all': 0.01, 'reg_all': 0.05}
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [39]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Build the training set</span>
+<span class="n">trainset</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">build_full_trainset</span><span class="p">()</span>
+
+<span class="c1"># Use the best model</span>
+<span class="n">best_svd</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">best_estimator</span><span class="p">[</span><span class="s1">'rmse'</span><span class="p">]</span>
+
+<span class="c1"># Train the model on the full training set</span>
+<span class="n">best_svd</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">trainset</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -8120,21 +8316,10 @@ CBF Model F1-Score: 0.0026
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[89]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[39]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
-<pre>&lt;surprise.prediction_algorithms.matrix_factorization.SVD at 0x2107c5c2750&gt;</pre>
+<pre>&lt;surprise.prediction_algorithms.matrix_factorization.SVD at 0x18b048cb3d0&gt;</pre>
 </div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-3:-Predict-Ratings">Step 3: Predict Ratings<a class="anchor-link" href="#Step-3:-Predict-Ratings">¶</a></h2><p>Predict ratings for user-item pairs in cf_test.</p>
 </div>
 </div>
 </div>
@@ -8143,27 +8328,17 @@ CBF Model F1-Score: 0.0026
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [90]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [40]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Prepare testset for prediction</span>
-<span class="n">testset</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">cf_test</span><span class="p">[</span><span class="s1">'userId'</span><span class="p">],</span> <span class="n">cf_test</span><span class="p">[</span><span class="s1">'movieId'</span><span class="p">],</span> <span class="n">cf_test</span><span class="p">[</span><span class="s1">'rating'</span><span class="p">]))</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Build the testset from the test data</span>
+<span class="n">testing_data</span> <span class="o">=</span> <span class="n">Dataset</span><span class="o">.</span><span class="n">load_from_df</span><span class="p">(</span><span class="n">testing</span><span class="p">[[</span><span class="s1">'userId'</span><span class="p">,</span> <span class="s1">'movieId'</span><span class="p">,</span> <span class="s1">'rating'</span><span class="p">]],</span> <span class="n">reader</span><span class="p">)</span>
+<span class="n">testingset</span> <span class="o">=</span> <span class="n">testing_data</span><span class="o">.</span><span class="n">build_full_trainset</span><span class="p">()</span><span class="o">.</span><span class="n">build_testset</span><span class="p">()</span>
 
-<span class="c1"># Get predictions</span>
-<span class="n">predictions</span> <span class="o">=</span> <span class="n">algo</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="n">testset</span><span class="p">)</span>
+<span class="c1"># Predict ratings</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">best_svd</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="n">testingset</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-4:-Evaluate-the-CF-Model">Step 4: Evaluate the CF Model<a class="anchor-link" href="#Step-4:-Evaluate-the-CF-Model">¶</a></h2><p>Extract Predictions</p>
 </div>
 </div>
 </div>
@@ -8172,25 +8347,67 @@ CBF Model F1-Score: 0.0026
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [91]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [41]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Convert predictions to DataFrame</span>
-<span class="n">pred_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([(</span><span class="n">pred</span><span class="o">.</span><span class="n">uid</span><span class="p">,</span> <span class="n">pred</span><span class="o">.</span><span class="n">iid</span><span class="p">,</span> <span class="n">pred</span><span class="o">.</span><span class="n">r_ui</span><span class="p">,</span> <span class="n">pred</span><span class="o">.</span><span class="n">est</span><span class="p">)</span> <span class="k">for</span> <span class="n">pred</span> <span class="ow">in</span> <span class="n">predictions</span><span class="p">],</span>
-                        <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'userId'</span><span class="p">,</span> <span class="s1">'movieId'</span><span class="p">,</span> <span class="s1">'rating'</span><span class="p">,</span> <span class="s1">'predicted_rating'</span><span class="p">])</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Extract true and predicted ratings</span>
+<span class="n">y_true</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">pred</span><span class="o">.</span><span class="n">r_ui</span> <span class="k">for</span> <span class="n">pred</span> <span class="ow">in</span> <span class="n">predictions</span><span class="p">])</span>
+<span class="n">y_pred</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">pred</span><span class="o">.</span><span class="n">est</span> <span class="k">for</span> <span class="n">pred</span> <span class="ow">in</span> <span class="n">predictions</span><span class="p">])</span>
 </pre></div>
 </div>
 </div>
 </div>
 </div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Compute RMSE and MAE</p>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [42]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Calculate RMSE and MAE</span>
+<span class="n">rmse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">root_mean_squared_error</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">))</span>
+<span class="n">mae</span> <span class="o">=</span> <span class="n">mean_absolute_error</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [43]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Define rating threshold</span>
+<span class="n">rating_threshold</span> <span class="o">=</span> <span class="mf">4.0</span>
+
+<span class="c1"># Convert ratings to binary relevance</span>
+<span class="n">y_true_binary</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_true</span> <span class="o">&gt;=</span> <span class="n">rating_threshold</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+<span class="n">y_pred_binary</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_pred</span> <span class="o">&gt;=</span> <span class="n">rating_threshold</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [44]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">precision_score</span><span class="p">,</span> <span class="n">recall_score</span><span class="p">,</span> <span class="n">f1_score</span>
+
+<span class="n">precision</span> <span class="o">=</span> <span class="n">precision_score</span><span class="p">(</span><span class="n">y_true_binary</span><span class="p">,</span> <span class="n">y_pred_binary</span><span class="p">,</span> <span class="n">zero_division</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">recall</span> <span class="o">=</span> <span class="n">recall_score</span><span class="p">(</span><span class="n">y_true_binary</span><span class="p">,</span> <span class="n">y_pred_binary</span><span class="p">,</span> <span class="n">zero_division</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">f1</span> <span class="o">=</span> <span class="n">f1_score</span><span class="p">(</span><span class="n">y_true_binary</span><span class="p">,</span> <span class="n">y_pred_binary</span><span class="p">,</span> <span class="n">zero_division</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
 </div>
 </div>
 </div>
@@ -8199,16 +8416,20 @@ CBF Model F1-Score: 0.0026
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [92]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [45]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">surprise</span> <span class="kn">import</span> <span class="n">accuracy</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Create a DataFrame to display the results</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s1">'RMSE'</span><span class="p">:</span> <span class="p">[</span><span class="n">rmse</span><span class="p">],</span>
+    <span class="s1">'MAE'</span><span class="p">:</span> <span class="p">[</span><span class="n">mae</span><span class="p">],</span>
+    <span class="s1">'Precision'</span><span class="p">:</span> <span class="p">[</span><span class="n">precision</span><span class="p">],</span>
+    <span class="s1">'Recall'</span><span class="p">:</span> <span class="p">[</span><span class="n">recall</span><span class="p">],</span>
+    <span class="s1">'F1-Score'</span><span class="p">:</span> <span class="p">[</span><span class="n">f1</span><span class="p">]</span>
+<span class="p">})</span>
 
-<span class="n">rmse_cf</span> <span class="o">=</span> <span class="n">accuracy</span><span class="o">.</span><span class="n">rmse</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">mae_cf</span> <span class="o">=</span> <span class="n">accuracy</span><span class="o">.</span><span class="n">mae</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"CF Model RMSE: </span><span class="si">{</span><span class="n">rmse_cf</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"CF Model MAE: </span><span class="si">{</span><span class="n">mae_cf</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Testing Metrics:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -8221,21 +8442,12 @@ CBF Model F1-Score: 0.0026
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>CF Model RMSE: 0.6265
-CF Model MAE: 0.4885
+<pre>
+Testing Metrics:
+       RMSE       MAE  Precision    Recall  F1-Score
+0  0.859537  0.660689   0.820999  0.350559  0.491326
 </pre>
 </div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Compute Precision, Recall, and F1-score</p>
 </div>
 </div>
 </div>
@@ -8244,298 +8456,144 @@ CF Model MAE: 0.4885
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [93]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [46]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Define relevance</span>
-<span class="n">pred_df</span><span class="p">[</span><span class="s1">'actual_relevant'</span><span class="p">]</span> <span class="o">=</span> <span class="n">pred_df</span><span class="p">[</span><span class="s1">'rating'</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mf">4.0</span>
-<span class="n">pred_df</span><span class="p">[</span><span class="s1">'predicted_relevant'</span><span class="p">]</span> <span class="o">=</span> <span class="n">pred_df</span><span class="p">[</span><span class="s1">'predicted_rating'</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mf">4.0</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Initialize lists to store cross-validation results</span>
+<span class="n">rmse_list</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">mae_list</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">precision_list</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">recall_list</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">f1_list</span> <span class="o">=</span> <span class="p">[]</span>
 
-<span class="c1"># Compute metrics</span>
-<span class="n">precision_cf</span> <span class="o">=</span> <span class="n">precision_score</span><span class="p">(</span><span class="n">pred_df</span><span class="p">[</span><span class="s1">'actual_relevant'</span><span class="p">],</span> <span class="n">pred_df</span><span class="p">[</span><span class="s1">'predicted_relevant'</span><span class="p">])</span>
-<span class="n">recall_cf</span> <span class="o">=</span> <span class="n">recall_score</span><span class="p">(</span><span class="n">pred_df</span><span class="p">[</span><span class="s1">'actual_relevant'</span><span class="p">],</span> <span class="n">pred_df</span><span class="p">[</span><span class="s1">'predicted_relevant'</span><span class="p">])</span>
-<span class="n">f1_cf</span> <span class="o">=</span> <span class="n">f1_score</span><span class="p">(</span><span class="n">pred_df</span><span class="p">[</span><span class="s1">'actual_relevant'</span><span class="p">],</span> <span class="n">pred_df</span><span class="p">[</span><span class="s1">'predicted_relevant'</span><span class="p">])</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"CF Model Precision: </span><span class="si">{</span><span class="n">precision_cf</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"CF Model Recall: </span><span class="si">{</span><span class="n">recall_cf</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"CF Model F1-Score: </span><span class="si">{</span><span class="n">f1_cf</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>CF Model Precision: 0.9338
-CF Model Recall: 0.4603
-CF Model F1-Score: 0.6166
-</pre>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="4.-Hybrid-Model">4. Hybrid Model<a class="anchor-link" href="#4.-Hybrid-Model">¶</a></h1><p>Combine predictions from CBF and CF models.</p>
-<h2 id="Step-1:-Merge-Predictions">Step 1: Merge Predictions<a class="anchor-link" href="#Step-1:-Merge-Predictions">¶</a></h2><p>Merge valid_predictions from CBF and pred_df from CF on userId and movieId.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [94]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Merge predictions</span>
-<span class="n">hybrid_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">valid_predictions</span><span class="p">[[</span><span class="s1">'userId'</span><span class="p">,</span> <span class="s1">'movieId'</span><span class="p">,</span> <span class="s1">'predicted_rating'</span><span class="p">]],</span> 
-                        <span class="n">pred_df</span><span class="p">[[</span><span class="s1">'userId'</span><span class="p">,</span> <span class="s1">'movieId'</span><span class="p">,</span> <span class="s1">'predicted_rating'</span><span class="p">]],</span> 
-                        <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s1">'userId'</span><span class="p">,</span> <span class="s1">'movieId'</span><span class="p">],</span> 
-                        <span class="n">suffixes</span><span class="o">=</span><span class="p">(</span><span class="s1">'_cbf'</span><span class="p">,</span> <span class="s1">'_cf'</span><span class="p">))</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-2:-Combine-Predictions">Step 2: Combine Predictions<a class="anchor-link" href="#Step-2:-Combine-Predictions">¶</a></h2><p>Use a weighted average to combine the predicted ratings.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [95]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Assign weights</span>
-<span class="n">weight_cbf</span> <span class="o">=</span> <span class="mf">0.2</span>
-<span class="n">weight_cf</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">weight_cbf</span>
-
-<span class="c1"># Compute hybrid predicted rating</span>
-<span class="n">hybrid_df</span><span class="p">[</span><span class="s1">'predicted_rating'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">weight_cbf</span> <span class="o">*</span> <span class="n">hybrid_df</span><span class="p">[</span><span class="s1">'predicted_rating_cbf'</span><span class="p">]</span> <span class="o">+</span> 
-                                 <span class="n">weight_cf</span> <span class="o">*</span> <span class="n">hybrid_df</span><span class="p">[</span><span class="s1">'predicted_rating_cf'</span><span class="p">])</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-3:-Evaluate-the-Hybrid-Model">Step 3: Evaluate the Hybrid Model<a class="anchor-link" href="#Step-3:-Evaluate-the-Hybrid-Model">¶</a></h2><p>Merge with Actual Ratings</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [96]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Merge hybrid predictions with actual ratings</span>
-<span class="n">hybrid_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">hybrid_df</span><span class="p">,</span> <span class="n">cf_test</span><span class="p">[[</span><span class="s1">'userId'</span><span class="p">,</span> <span class="s1">'movieId'</span><span class="p">,</span> <span class="s1">'rating'</span><span class="p">]],</span> <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s1">'userId'</span><span class="p">,</span> <span class="s1">'movieId'</span><span class="p">])</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Compute RMSE and MAE</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [97]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">rmse_hybrid</span> <span class="o">=</span> <span class="n">mean_squared_error</span><span class="p">(</span><span class="n">hybrid_df</span><span class="p">[</span><span class="s1">'rating'</span><span class="p">],</span> <span class="n">hybrid_df</span><span class="p">[</span><span class="s1">'predicted_rating'</span><span class="p">],</span> <span class="n">squared</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">mae_hybrid</span> <span class="o">=</span> <span class="n">mean_absolute_error</span><span class="p">(</span><span class="n">hybrid_df</span><span class="p">[</span><span class="s1">'rating'</span><span class="p">],</span> <span class="n">hybrid_df</span><span class="p">[</span><span class="s1">'predicted_rating'</span><span class="p">])</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Hybrid Model RMSE: </span><span class="si">{</span><span class="n">rmse_hybrid</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Hybrid Model MAE: </span><span class="si">{</span><span class="n">mae_hybrid</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Hybrid Model RMSE: 0.8767
-Hybrid Model MAE: 0.7455
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>c:\Users\pedro\Desktop\Github\DS_340-Movies\.venv\Lib\site-packages\sklearn\metrics\_regression.py:492: FutureWarning: 'squared' is deprecated in version 1.4 and will be removed in 1.6. To calculate the root mean squared error, use the function'root_mean_squared_error'.
-  warnings.warn(
-</pre>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Compute Precision, Recall, and F1-score</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [98]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Define relevance</span>
-<span class="n">hybrid_df</span><span class="p">[</span><span class="s1">'actual_relevant'</span><span class="p">]</span> <span class="o">=</span> <span class="n">hybrid_df</span><span class="p">[</span><span class="s1">'rating'</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mf">4.0</span>
-<span class="n">hybrid_df</span><span class="p">[</span><span class="s1">'predicted_relevant'</span><span class="p">]</span> <span class="o">=</span> <span class="n">hybrid_df</span><span class="p">[</span><span class="s1">'predicted_rating'</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mf">4.0</span>
-
-<span class="c1"># Compute metrics</span>
-<span class="n">precision_hybrid</span> <span class="o">=</span> <span class="n">precision_score</span><span class="p">(</span><span class="n">hybrid_df</span><span class="p">[</span><span class="s1">'actual_relevant'</span><span class="p">],</span> <span class="n">hybrid_df</span><span class="p">[</span><span class="s1">'predicted_relevant'</span><span class="p">])</span>
-<span class="n">recall_hybrid</span> <span class="o">=</span> <span class="n">recall_score</span><span class="p">(</span><span class="n">hybrid_df</span><span class="p">[</span><span class="s1">'actual_relevant'</span><span class="p">],</span> <span class="n">hybrid_df</span><span class="p">[</span><span class="s1">'predicted_relevant'</span><span class="p">])</span>
-<span class="n">f1_hybrid</span> <span class="o">=</span> <span class="n">f1_score</span><span class="p">(</span><span class="n">hybrid_df</span><span class="p">[</span><span class="s1">'actual_relevant'</span><span class="p">],</span> <span class="n">hybrid_df</span><span class="p">[</span><span class="s1">'predicted_relevant'</span><span class="p">])</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Hybrid Model Precision: </span><span class="si">{</span><span class="n">precision_hybrid</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Hybrid Model Recall: </span><span class="si">{</span><span class="n">recall_hybrid</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Hybrid Model F1-Score: </span><span class="si">{</span><span class="n">f1_hybrid</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Hybrid Model Precision: 0.9643
-Hybrid Model Recall: 0.0175
-Hybrid Model F1-Score: 0.0344
-</pre>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="5.-Final-validation">5. Final validation<a class="anchor-link" href="#5.-Final-validation">¶</a></h1>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [99]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># For CF Model</span>
-<span class="n">validationset</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">cf_validation</span><span class="p">[</span><span class="s1">'userId'</span><span class="p">],</span> <span class="n">cf_validation</span><span class="p">[</span><span class="s1">'movieId'</span><span class="p">],</span> <span class="n">cf_validation</span><span class="p">[</span><span class="s1">'rating'</span><span class="p">]))</span>
-<span class="n">validation_predictions</span> <span class="o">=</span> <span class="n">algo</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="n">validationset</span><span class="p">)</span>
-
-<span class="c1"># Compute RMSE and MAE on validation set</span>
-<span class="n">rmse_val</span> <span class="o">=</span> <span class="n">accuracy</span><span class="o">.</span><span class="n">rmse</span><span class="p">(</span><span class="n">validation_predictions</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">mae_val</span> <span class="o">=</span> <span class="n">accuracy</span><span class="o">.</span><span class="n">mae</span><span class="p">(</span><span class="n">validation_predictions</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"CF Model Validation RMSE: </span><span class="si">{</span><span class="n">rmse_val</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"CF Model Validation MAE: </span><span class="si">{</span><span class="n">mae_val</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-
-<span class="c1"># For CBF Model</span>
-<span class="c1"># Merge cf_validation with cbf_validation</span>
-<span class="n">validation_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">cf_validation</span><span class="p">,</span> <span class="n">cbf_validation</span><span class="p">[[</span><span class="s1">'movieId'</span><span class="p">,</span> <span class="s1">'related'</span><span class="p">]],</span> <span class="n">on</span><span class="o">=</span><span class="s1">'movieId'</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">'inner'</span><span class="p">)</span>
-<span class="n">validation_tfidf</span> <span class="o">=</span> <span class="n">tfidf</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">validation_data</span><span class="p">[</span><span class="s1">'related'</span><span class="p">])</span>
-
-<span class="c1"># Predict ratings for validation data</span>
-<span class="n">predicted_ratings_val</span> <span class="o">=</span> <span class="p">[]</span>
-
-<span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">validation_data</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
-    <span class="n">user_id</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">'userId'</span><span class="p">]</span>
-    <span class="n">movie_tfidf</span> <span class="o">=</span> <span class="n">validation_tfidf</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>  <span class="c1"># Sparse matrix</span>
-    <span class="n">user_profile</span> <span class="o">=</span> <span class="n">user_profiles</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span>  <span class="c1"># Sparse matrix</span>
+<span class="c1"># Perform 5-fold cross-validation</span>
+<span class="k">for</span> <span class="n">trainset_cv</span><span class="p">,</span> <span class="n">testset_cv</span> <span class="ow">in</span> <span class="n">kf</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+    <span class="c1"># Train the algorithm on trainset</span>
+    <span class="n">best_svd</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">trainset_cv</span><span class="p">)</span>
     
-    <span class="k">if</span> <span class="n">user_profile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="c1"># Convert both user_profile and movie_tfidf to dense arrays</span>
-        <span class="n">user_profile_dense</span> <span class="o">=</span> <span class="n">user_profile</span><span class="o">.</span><span class="n">A</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>  <span class="c1"># Convert to dense array</span>
-        <span class="n">movie_tfidf_dense</span> <span class="o">=</span> <span class="n">movie_tfidf</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>  <span class="c1"># Convert to dense array</span>
+    <span class="c1"># Test the algorithm on testset</span>
+    <span class="n">predictions_cv</span> <span class="o">=</span> <span class="n">best_svd</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="n">testset_cv</span><span class="p">)</span>
+    
+    <span class="c1"># Extract true and predicted ratings</span>
+    <span class="n">y_true_cv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">pred</span><span class="o">.</span><span class="n">r_ui</span> <span class="k">for</span> <span class="n">pred</span> <span class="ow">in</span> <span class="n">predictions_cv</span><span class="p">])</span>
+    <span class="n">y_pred_cv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">pred</span><span class="o">.</span><span class="n">est</span> <span class="k">for</span> <span class="n">pred</span> <span class="ow">in</span> <span class="n">predictions_cv</span><span class="p">])</span>
+    
+    <span class="c1"># Compute RMSE and MAE</span>
+    <span class="n">rmse_cv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">root_mean_squared_error</span><span class="p">(</span><span class="n">y_true_cv</span><span class="p">,</span> <span class="n">y_pred_cv</span><span class="p">))</span>
+    <span class="n">mae_cv</span> <span class="o">=</span> <span class="n">mean_absolute_error</span><span class="p">(</span><span class="n">y_true_cv</span><span class="p">,</span> <span class="n">y_pred_cv</span><span class="p">)</span>
+    
+    <span class="c1"># Convert to binary relevance</span>
+    <span class="n">y_true_cv_binary</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_true_cv</span> <span class="o">&gt;=</span> <span class="n">rating_threshold</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">y_pred_cv_binary</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_pred_cv</span> <span class="o">&gt;=</span> <span class="n">rating_threshold</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    
+    <span class="c1"># Compute Precision, Recall, and F1-Score</span>
+    <span class="n">precision_cv</span> <span class="o">=</span> <span class="n">precision_score</span><span class="p">(</span><span class="n">y_true_cv_binary</span><span class="p">,</span> <span class="n">y_pred_cv_binary</span><span class="p">,</span> <span class="n">zero_division</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">recall_cv</span> <span class="o">=</span> <span class="n">recall_score</span><span class="p">(</span><span class="n">y_true_cv_binary</span><span class="p">,</span> <span class="n">y_pred_cv_binary</span><span class="p">,</span> <span class="n">zero_division</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">f1_cv</span> <span class="o">=</span> <span class="n">f1_score</span><span class="p">(</span><span class="n">y_true_cv_binary</span><span class="p">,</span> <span class="n">y_pred_cv_binary</span><span class="p">,</span> <span class="n">zero_division</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    
+    <span class="c1"># Append metrics to lists</span>
+    <span class="n">rmse_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rmse_cv</span><span class="p">)</span>
+    <span class="n">mae_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mae_cv</span><span class="p">)</span>
+    <span class="n">precision_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">precision_cv</span><span class="p">)</span>
+    <span class="n">recall_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">recall_cv</span><span class="p">)</span>
+    <span class="n">f1_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f1_cv</span><span class="p">)</span>
 
-        <span class="c1"># Compute the dot product and append the scalar result</span>
-        <span class="n">pred_rating</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">user_profile_dense</span><span class="p">,</span> <span class="n">movie_tfidf_dense</span><span class="p">)</span>
-        <span class="n">predicted_ratings_val</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pred_rating</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">predicted_ratings_val</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+<span class="c1"># Create a DataFrame with cross-validation metrics</span>
+<span class="n">cv_results</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s1">'Fold'</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+    <span class="s1">'RMSE'</span><span class="p">:</span> <span class="n">rmse_list</span><span class="p">,</span>
+    <span class="s1">'MAE'</span><span class="p">:</span> <span class="n">mae_list</span><span class="p">,</span>
+    <span class="s1">'Precision'</span><span class="p">:</span> <span class="n">precision_list</span><span class="p">,</span>
+    <span class="s1">'Recall'</span><span class="p">:</span> <span class="n">recall_list</span><span class="p">,</span>
+    <span class="s1">'F1-Score'</span><span class="p">:</span> <span class="n">f1_list</span>
+<span class="p">})</span>
 
-<span class="c1"># Add the predicted ratings to the DataFrame</span>
-<span class="n">validation_data</span><span class="p">[</span><span class="s1">'predicted_rating'</span><span class="p">]</span> <span class="o">=</span> <span class="n">predicted_ratings_val</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Cross-Validation Metrics:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">cv_results</span><span class="p">)</span>
 
-<span class="c1"># Scale predicted ratings</span>
-<span class="n">valid_predictions_val</span> <span class="o">=</span> <span class="n">validation_data</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s1">'predicted_rating'</span><span class="p">])</span>
-<span class="n">scaled_ratings_val</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">valid_predictions_val</span><span class="p">[</span><span class="s1">'predicted_rating'</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-<span class="n">valid_predictions_val</span><span class="p">[</span><span class="s1">'predicted_rating'</span><span class="p">]</span> <span class="o">=</span> <span class="n">scaled_ratings_val</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+<span class="c1"># Calculate average metrics</span>
+<span class="n">avg_metrics</span> <span class="o">=</span> <span class="n">cv_results</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">numeric_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Average Cross-Validation Metrics:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">avg_metrics</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>
+Cross-Validation Metrics:
+   Fold      RMSE       MAE  Precision    Recall  F1-Score
+0     1  0.885114  0.682038   0.812895  0.346263  0.485655
+1     2  0.874633  0.673629   0.810702  0.347527  0.486503
+2     3  0.872095  0.670034   0.812078  0.347732  0.486951
+3     4  0.872325  0.670060   0.803193  0.330666  0.468468
+4     5  0.876103  0.671348   0.816533  0.333191  0.473264
+
+Average Cross-Validation Metrics:
+Fold         3.000000
+RMSE         0.876054
+MAE          0.673422
+Precision    0.811080
+Recall       0.341076
+F1-Score     0.480168
+dtype: float64
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [47]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Build the validationset from the validation data</span>
+<span class="n">validation_data</span> <span class="o">=</span> <span class="n">Dataset</span><span class="o">.</span><span class="n">load_from_df</span><span class="p">(</span><span class="n">validation</span><span class="p">[[</span><span class="s1">'userId'</span><span class="p">,</span> <span class="s1">'movieId'</span><span class="p">,</span> <span class="s1">'rating'</span><span class="p">]],</span> <span class="n">reader</span><span class="p">)</span>
+<span class="n">validationset</span> <span class="o">=</span> <span class="n">validation_data</span><span class="o">.</span><span class="n">build_full_trainset</span><span class="p">()</span><span class="o">.</span><span class="n">build_testset</span><span class="p">()</span>
+
+
+<span class="c1"># Predict ratings</span>
+<span class="n">predictions_test</span> <span class="o">=</span> <span class="n">best_svd</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="n">validationset</span><span class="p">)</span>
+
+<span class="c1"># Extract true and predicted ratings</span>
+<span class="n">y_true_test</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">pred</span><span class="o">.</span><span class="n">r_ui</span> <span class="k">for</span> <span class="n">pred</span> <span class="ow">in</span> <span class="n">predictions_test</span><span class="p">])</span>
+<span class="n">y_pred_test</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">pred</span><span class="o">.</span><span class="n">est</span> <span class="k">for</span> <span class="n">pred</span> <span class="ow">in</span> <span class="n">predictions_test</span><span class="p">])</span>
 
 <span class="c1"># Compute RMSE and MAE</span>
-<span class="n">rmse_val</span> <span class="o">=</span> <span class="n">mean_squared_error</span><span class="p">(</span><span class="n">valid_predictions_val</span><span class="p">[</span><span class="s1">'rating'</span><span class="p">],</span> <span class="n">valid_predictions_val</span><span class="p">[</span><span class="s1">'predicted_rating'</span><span class="p">],</span> <span class="n">squared</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">mae_val</span> <span class="o">=</span> <span class="n">mean_absolute_error</span><span class="p">(</span><span class="n">valid_predictions_val</span><span class="p">[</span><span class="s1">'rating'</span><span class="p">],</span> <span class="n">valid_predictions_val</span><span class="p">[</span><span class="s1">'predicted_rating'</span><span class="p">])</span>
+<span class="n">rmse_test</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">root_mean_squared_error</span><span class="p">(</span><span class="n">y_true_test</span><span class="p">,</span> <span class="n">y_pred_test</span><span class="p">))</span>
+<span class="n">mae_test</span> <span class="o">=</span> <span class="n">mean_absolute_error</span><span class="p">(</span><span class="n">y_true_test</span><span class="p">,</span> <span class="n">y_pred_test</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"CBF Model Validation RMSE: </span><span class="si">{</span><span class="n">rmse_val</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"CBF Model Validation MAE: </span><span class="si">{</span><span class="n">mae_val</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="c1"># Convert to binary relevance</span>
+<span class="n">y_true_test_binary</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_true_test</span> <span class="o">&gt;=</span> <span class="n">rating_threshold</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+<span class="n">y_pred_test_binary</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_pred_test</span> <span class="o">&gt;=</span> <span class="n">rating_threshold</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+<span class="c1"># Compute Precision, Recall, and F1-Score</span>
+<span class="n">precision_test</span> <span class="o">=</span> <span class="n">precision_score</span><span class="p">(</span><span class="n">y_true_test_binary</span><span class="p">,</span> <span class="n">y_pred_test_binary</span><span class="p">,</span> <span class="n">zero_division</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">recall_test</span> <span class="o">=</span> <span class="n">recall_score</span><span class="p">(</span><span class="n">y_true_test_binary</span><span class="p">,</span> <span class="n">y_pred_test_binary</span><span class="p">,</span> <span class="n">zero_division</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">f1_test</span> <span class="o">=</span> <span class="n">f1_score</span><span class="p">(</span><span class="n">y_true_test_binary</span><span class="p">,</span> <span class="n">y_pred_test_binary</span><span class="p">,</span> <span class="n">zero_division</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># Create a DataFrame to display the results</span>
+<span class="n">test_results</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s1">'RMSE'</span><span class="p">:</span> <span class="p">[</span><span class="n">rmse_test</span><span class="p">],</span>
+    <span class="s1">'MAE'</span><span class="p">:</span> <span class="p">[</span><span class="n">mae_test</span><span class="p">],</span>
+    <span class="s1">'Precision'</span><span class="p">:</span> <span class="p">[</span><span class="n">precision_test</span><span class="p">],</span>
+    <span class="s1">'Recall'</span><span class="p">:</span> <span class="p">[</span><span class="n">recall_test</span><span class="p">],</span>
+    <span class="s1">'F1-Score'</span><span class="p">:</span> <span class="p">[</span><span class="n">f1_test</span><span class="p">]</span>
+<span class="p">})</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Validation Metrics:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">test_results</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -8548,18 +8606,227 @@ Hybrid Model F1-Score: 0.0344
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>CF Model Validation RMSE: 0.8653
-CF Model Validation MAE: 0.6650
-CBF Model Validation RMSE: 3.0438
-CBF Model Validation MAE: 2.8599
+<pre>
+Validation Metrics:
+      RMSE       MAE  Precision    Recall  F1-Score
+0  0.86899  0.668116   0.808086  0.326983  0.465576
 </pre>
 </div>
 </div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [48]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Collaborative filtering model metrics</span>
+<span class="n">collaborative_results</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s1">'Model'</span><span class="p">:</span> <span class="p">[</span><span class="s1">'Collaborative Filtering'</span><span class="p">],</span>
+    <span class="s1">'RMSE'</span><span class="p">:</span> <span class="p">[</span><span class="n">rmse</span><span class="p">],</span>
+    <span class="s1">'MAE'</span><span class="p">:</span> <span class="p">[</span><span class="n">mae</span><span class="p">],</span>
+    <span class="s1">'Precision'</span><span class="p">:</span> <span class="p">[</span><span class="n">precision</span><span class="p">],</span>
+    <span class="s1">'Recall'</span><span class="p">:</span> <span class="p">[</span><span class="n">recall</span><span class="p">],</span>
+    <span class="s1">'F1-Score'</span><span class="p">:</span> <span class="p">[</span><span class="n">f1</span><span class="p">]</span>
+<span class="p">})</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h1 id="4.-Hybrid-Model">4. Hybrid Model<a class="anchor-link" href="#4.-Hybrid-Model">¶</a></h1>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [49]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Define weights for each model</span>
+<span class="n">weight_content</span> <span class="o">=</span> <span class="mf">0.2</span>
+<span class="n">weight_collaborative</span> <span class="o">=</span> <span class="mi">1</span><span class="o">-</span> <span class="n">weight_content</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [50]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Ensure that 'testing' DataFrame contains both content-based and collaborative predictions</span>
+
+<span class="c1"># From content-based filtering</span>
+<span class="n">testing_content</span> <span class="o">=</span> <span class="n">testing</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">testing_content</span> <span class="o">=</span> <span class="n">testing_content</span><span class="p">[[</span><span class="s1">'userId'</span><span class="p">,</span> <span class="s1">'movieId'</span><span class="p">,</span> <span class="s1">'predicted_rating'</span><span class="p">,</span> <span class="s1">'relevant'</span><span class="p">,</span> <span class="s1">'predicted_relevant'</span><span class="p">,</span> <span class="s1">'rating'</span><span class="p">]]</span>
+
+<span class="c1"># From collaborative filtering</span>
+<span class="c1"># We have 'predictions' list from collaborative filtering (Surprise library)</span>
+<span class="c1"># Convert the predictions to a DataFrame</span>
+<span class="n">collab_preds</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([(</span><span class="n">pred</span><span class="o">.</span><span class="n">uid</span><span class="p">,</span> <span class="n">pred</span><span class="o">.</span><span class="n">iid</span><span class="p">,</span> <span class="n">pred</span><span class="o">.</span><span class="n">est</span><span class="p">)</span> <span class="k">for</span> <span class="n">pred</span> <span class="ow">in</span> <span class="n">predictions</span><span class="p">],</span>
+                            <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'userId'</span><span class="p">,</span> <span class="s1">'movieId'</span><span class="p">,</span> <span class="s1">'predicted_rating_collab'</span><span class="p">])</span>
+
+<span class="c1"># Merge the content-based and collaborative predictions on userId and movieId</span>
+<span class="n">hybrid_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">testing_content</span><span class="p">,</span> <span class="n">collab_preds</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s1">'userId'</span><span class="p">,</span> <span class="s1">'movieId'</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="s1">'inner'</span><span class="p">)</span>
+
+<span class="c1"># Now, compute the hybrid predicted rating</span>
+<span class="n">hybrid_data</span><span class="p">[</span><span class="s1">'predicted_rating_hybrid'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">weight_content</span> <span class="o">*</span> <span class="n">hybrid_data</span><span class="p">[</span><span class="s1">'predicted_rating'</span><span class="p">]</span> <span class="o">+</span>
+                                          <span class="n">weight_collaborative</span> <span class="o">*</span> <span class="n">hybrid_data</span><span class="p">[</span><span class="s1">'predicted_rating_collab'</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [51]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">testing</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[51]:</div>
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>userId</th>
+<th>movieId</th>
+<th>rating</th>
+<th>relevant</th>
+<th>predicted_rating</th>
+<th>predicted_relevant</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>82248</th>
+<td>522</td>
+<td>1265</td>
+<td>4.5</td>
+<td>True</td>
+<td>3.734266</td>
+<td>False</td>
+</tr>
+<tr>
+<th>4631</th>
+<td>28</td>
+<td>47629</td>
+<td>2.0</td>
+<td>False</td>
+<td>3.016990</td>
+<td>False</td>
+</tr>
+<tr>
+<th>84347</th>
+<td>541</td>
+<td>224</td>
+<td>4.0</td>
+<td>True</td>
+<td>3.360656</td>
+<td>False</td>
+</tr>
+<tr>
+<th>95803</th>
+<td>600</td>
+<td>30749</td>
+<td>2.0</td>
+<td>False</td>
+<td>3.018987</td>
+<td>False</td>
+</tr>
+<tr>
+<th>17706</th>
+<td>111</td>
+<td>94478</td>
+<td>4.0</td>
+<td>True</td>
+<td>4.000000</td>
+<td>False</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [52]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># True ratings</span>
+<span class="n">y_true_hybrid</span> <span class="o">=</span> <span class="n">hybrid_data</span><span class="p">[</span><span class="s1">'rating'</span><span class="p">]</span>
+
+<span class="c1"># Hybrid predicted ratings</span>
+<span class="n">y_pred_hybrid</span> <span class="o">=</span> <span class="n">hybrid_data</span><span class="p">[</span><span class="s1">'predicted_rating'</span><span class="p">]</span>
+
+<span class="c1"># Compute RMSE and MAE</span>
+<span class="n">rmse_hybrid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">root_mean_squared_error</span><span class="p">(</span><span class="n">y_true_hybrid</span><span class="p">,</span> <span class="n">y_pred_hybrid</span><span class="p">))</span>
+<span class="n">mae_hybrid</span> <span class="o">=</span> <span class="n">mean_absolute_error</span><span class="p">(</span><span class="n">y_true_hybrid</span><span class="p">,</span> <span class="n">y_pred_hybrid</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">rmse_hybrid</span><span class="p">,</span> <span class="n">mae_hybrid</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>c:\Users\pedro\Desktop\Github\DS_340-Movies\.venv\Lib\site-packages\sklearn\metrics\_regression.py:492: FutureWarning: 'squared' is deprecated in version 1.4 and will be removed in 1.6. To calculate the root mean squared error, use the function'root_mean_squared_error'.
-  warnings.warn(
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>1.001351598477931 0.7508850234582828
 </pre>
 </div>
 </div>
@@ -8570,51 +8837,25 @@ CBF Model Validation MAE: 2.8599
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [100]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [53]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Initialize the table</span>
-<span class="n">metrics_table</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'Model'</span><span class="p">,</span> <span class="s1">'RMSE'</span><span class="p">,</span> <span class="s1">'MAE'</span><span class="p">,</span> <span class="s1">'Precision'</span><span class="p">,</span> <span class="s1">'Recall'</span><span class="p">,</span> <span class="s1">'F1-Score'</span><span class="p">])</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Define rating threshold</span>
+<span class="n">rating_threshold</span> <span class="o">=</span> <span class="mf">4.0</span>
 
-<span class="c1"># Add Collaborative Filtering Metrics</span>
-<span class="n">cf_metrics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([{</span>
-    <span class="s1">'Model'</span><span class="p">:</span> <span class="s1">'Collaborative Filtering'</span><span class="p">,</span>
-    <span class="s1">'RMSE'</span><span class="p">:</span> <span class="n">rmse_cf</span><span class="p">,</span>
-    <span class="s1">'MAE'</span><span class="p">:</span> <span class="n">mae_cf</span><span class="p">,</span>
-    <span class="s1">'Precision'</span><span class="p">:</span> <span class="n">precision_cf</span><span class="p">,</span>
-    <span class="s1">'Recall'</span><span class="p">:</span> <span class="n">recall_cf</span><span class="p">,</span>
-    <span class="s1">'F1-Score'</span><span class="p">:</span> <span class="n">f1_cf</span>
-<span class="p">}])</span>
+<span class="c1"># Convert true ratings to binary relevance</span>
+<span class="n">hybrid_data</span><span class="p">[</span><span class="s1">'relevant'</span><span class="p">]</span> <span class="o">=</span> <span class="n">hybrid_data</span><span class="p">[</span><span class="s1">'rating'</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">rating_threshold</span>
 
-<span class="n">metrics_table</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">metrics_table</span><span class="p">,</span> <span class="n">cf_metrics</span><span class="p">],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="c1"># Convert hybrid predicted ratings to binary relevance</span>
+<span class="n">hybrid_data</span><span class="p">[</span><span class="s1">'predicted_relevant_hybrid'</span><span class="p">]</span> <span class="o">=</span> <span class="n">hybrid_data</span><span class="p">[</span><span class="s1">'predicted_rating_hybrid'</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">rating_threshold</span>
 
-<span class="c1"># Add Content-Based Filtering Metrics</span>
-<span class="n">cbf_metrics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([{</span>
-    <span class="s1">'Model'</span><span class="p">:</span> <span class="s1">'Content-Based Filtering'</span><span class="p">,</span>
-    <span class="s1">'RMSE'</span><span class="p">:</span> <span class="n">rmse_cbf</span><span class="p">,</span>
-    <span class="s1">'MAE'</span><span class="p">:</span> <span class="n">mae_cbf</span><span class="p">,</span>
-    <span class="s1">'Precision'</span><span class="p">:</span> <span class="n">precision_cbf</span><span class="p">,</span>
-    <span class="s1">'Recall'</span><span class="p">:</span> <span class="n">recall_cbf</span><span class="p">,</span>
-    <span class="s1">'F1-Score'</span><span class="p">:</span> <span class="n">f1_cbf</span>
-<span class="p">}])</span>
+<span class="c1"># Compute Precision, Recall, and F1-Score</span>
+<span class="n">precision_hybrid</span> <span class="o">=</span> <span class="n">precision_score</span><span class="p">(</span><span class="n">hybrid_data</span><span class="p">[</span><span class="s1">'relevant'</span><span class="p">],</span> <span class="n">hybrid_data</span><span class="p">[</span><span class="s1">'predicted_relevant_hybrid'</span><span class="p">],</span> <span class="n">zero_division</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">recall_hybrid</span> <span class="o">=</span> <span class="n">recall_score</span><span class="p">(</span><span class="n">hybrid_data</span><span class="p">[</span><span class="s1">'relevant'</span><span class="p">],</span> <span class="n">hybrid_data</span><span class="p">[</span><span class="s1">'predicted_relevant_hybrid'</span><span class="p">],</span> <span class="n">zero_division</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">f1_hybrid</span> <span class="o">=</span> <span class="n">f1_score</span><span class="p">(</span><span class="n">hybrid_data</span><span class="p">[</span><span class="s1">'relevant'</span><span class="p">],</span> <span class="n">hybrid_data</span><span class="p">[</span><span class="s1">'predicted_relevant_hybrid'</span><span class="p">],</span> <span class="n">zero_division</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-<span class="n">metrics_table</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">metrics_table</span><span class="p">,</span> <span class="n">cbf_metrics</span><span class="p">],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-<span class="c1"># Add Hybrid Model Metrics</span>
-<span class="n">hybrid_metrics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([{</span>
-    <span class="s1">'Model'</span><span class="p">:</span> <span class="s1">'Hybrid Model'</span><span class="p">,</span>
-    <span class="s1">'RMSE'</span><span class="p">:</span> <span class="n">rmse_hybrid</span><span class="p">,</span>
-    <span class="s1">'MAE'</span><span class="p">:</span> <span class="n">mae_hybrid</span><span class="p">,</span>
-    <span class="s1">'Precision'</span><span class="p">:</span> <span class="n">precision_hybrid</span><span class="p">,</span>
-    <span class="s1">'Recall'</span><span class="p">:</span> <span class="n">recall_hybrid</span><span class="p">,</span>
-    <span class="s1">'F1-Score'</span><span class="p">:</span> <span class="n">f1_hybrid</span>
-<span class="p">}])</span>
-
-<span class="n">metrics_table</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">metrics_table</span><span class="p">,</span> <span class="n">hybrid_metrics</span><span class="p">],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-<span class="c1"># Print and save the table</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">metrics_table</span><span class="p">)</span>
-<span class="n">metrics_table</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">'model_comparison_metrics.csv'</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">precision_hybrid</span><span class="p">,</span> <span class="n">recall_hybrid</span><span class="p">,</span> <span class="n">f1_hybrid</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -8627,18 +8868,89 @@ CBF Model Validation MAE: 2.8599
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>                     Model      RMSE       MAE  Precision    Recall  F1-Score
-0  Collaborative Filtering  0.626529  0.488523   0.933810  0.460271  0.616615
-1  Content-Based Filtering  3.053095  2.875866   0.666667  0.001298  0.002591
-2             Hybrid Model  0.876686  0.745531   0.964286  0.017521  0.034417
+<pre>0.8363376251788269 0.33344741044946385 0.47679634613816163
 </pre>
 </div>
 </div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [54]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Create a DataFrame to display the results</span>
+<span class="n">hybrid_results</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s1">'RMSE'</span><span class="p">:</span> <span class="p">[</span><span class="n">rmse_hybrid</span><span class="p">],</span>
+    <span class="s1">'MAE'</span><span class="p">:</span> <span class="p">[</span><span class="n">mae_hybrid</span><span class="p">],</span>
+    <span class="s1">'Precision'</span><span class="p">:</span> <span class="p">[</span><span class="n">precision_hybrid</span><span class="p">],</span>
+    <span class="s1">'Recall'</span><span class="p">:</span> <span class="p">[</span><span class="n">recall_hybrid</span><span class="p">],</span>
+    <span class="s1">'F1-Score'</span><span class="p">:</span> <span class="p">[</span><span class="n">f1_hybrid</span><span class="p">]</span>
+<span class="p">})</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Hybrid Model Metrics:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">hybrid_results</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>C:\Users\pedro\AppData\Local\Temp\ipykernel_36184\1370631475.py:14: FutureWarning: The behavior of DataFrame concatenation with empty or all-NA entries is deprecated. In a future version, this will no longer exclude empty or all-NA columns when determining the result dtypes. To retain the old behavior, exclude the relevant entries before the concat operation.
-  metrics_table = pd.concat([metrics_table, cf_metrics], ignore_index=True)
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>
+Hybrid Model Metrics:
+       RMSE       MAE  Precision    Recall  F1-Score
+0  1.001352  0.750885   0.836338  0.333447  0.476796
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [55]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Hybrid model metrics</span>
+<span class="n">hybrid_results</span><span class="p">[</span><span class="s1">'Model'</span><span class="p">]</span> <span class="o">=</span> <span class="s1">'Hybrid'</span>
+
+<span class="c1"># Combine all results</span>
+<span class="n">all_results</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">content_results</span><span class="p">,</span> <span class="n">collaborative_results</span><span class="p">,</span> <span class="n">hybrid_results</span><span class="p">],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Rearrange columns</span>
+<span class="n">all_results</span> <span class="o">=</span> <span class="n">all_results</span><span class="p">[[</span><span class="s1">'Model'</span><span class="p">,</span> <span class="s1">'RMSE'</span><span class="p">,</span> <span class="s1">'MAE'</span><span class="p">,</span> <span class="s1">'Precision'</span><span class="p">,</span> <span class="s1">'Recall'</span><span class="p">,</span> <span class="s1">'F1-Score'</span><span class="p">]]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Comparison of Models:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">all_results</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>
+Comparison of Models:
+                     Model      RMSE       MAE  Precision    Recall  F1-Score
+0            Content-Based  1.002705  0.750885   0.686747  0.006502  0.012883
+1  Collaborative Filtering  0.859537  0.660689   0.820999  0.350559  0.491326
+2                   Hybrid  1.001352  0.750885   0.836338  0.333447  0.476796
 </pre>
 </div>
 </div>
