@@ -35,3 +35,8 @@ From the Results,
 
 - **Overall**: 
   - **Content-Based Filtering** excelled in recall, while **Hybrid Model** provided a more balanced performance across precision, recall, and F1-Score.
+ 
+
+
+# Enhanced Implementation
+- Enhanced implementation code is inside of the enhanced implementation folder as 'research_v2'
