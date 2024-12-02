@@ -40,3 +40,7 @@ From the Results,
 
 # Enhanced Implementation
 - Enhanced implementation code is inside of the enhanced implementation folder as 'research_v2'
+
+# Final Implementation
+- The final implementation code is inside of the Enhanced Implementation folder as 'research_v4.ipynb' and 'research_v4.html'
+- Our final results were as follows:
