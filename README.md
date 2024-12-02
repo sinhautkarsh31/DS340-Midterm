@@ -44,3 +44,10 @@ From the Results,
 # Final Implementation
 - The final implementation code is inside of the Enhanced Implementation folder as 'research_v4.ipynb' and 'research_v4.html'
 - Our final results were as follows:
+
+| Model                  | Fold | RMSE      | MAE       | Precision | Recall   | F1-Score |
+|------------------------|------|-----------|-----------|-----------|----------|----------|
+| Content-Based          | 3.0  | 0.856751  | 0.655978  | 0.823251  | 0.357121 | 0.498128 |
+| Collaborative Filtering| 3.0  | 0.875013  | 0.672279  | 0.813193  | 0.343084 | 0.482569 |
+| Hybrid                 | 3.0  | 0.876262  | 0.673641  | 0.837276  | 0.302562 | 0.444467 |
+
